@@ -14,27 +14,32 @@ logger = logging.getLogger(__name__)
 current_dir = Path(__file__).parent
 env_path = current_dir / 'key.env'
 
-# Force reload environment variables
-os.environ.clear()
 load_dotenv(env_path, override=True)
 
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 PERPLEXITY_API_KEY = os.getenv('PERPLEXITY_API_KEY') # Alternative for more expensive model, better for recent events
-print(f"Full Perplexity API Key: {'*' * (len(PERPLEXITY_API_KEY)-4)}{PERPLEXITY_API_KEY[-4:]}")  # Show last 4 chars for debugging
-print(f"OpenAI API Key: {'*' * (len(OPENAI_API_KEY)-4)}{OPENAI_API_KEY[-4:]}")  # Show last 4 chars for debugging
+OPENAI_MODEL = os.getenv('OPENAI_MODEL', 'gpt-4o-mini')
+PERPLEXITY_MODEL = os.getenv('PERPLEXITY_MODEL', 'sonar-pro')
+
+def mask_key(api_key):
+    if not api_key:
+        return "<missing>"
+    return f"{'*' * max(len(api_key) - 4, 0)}{api_key[-4:]}"
+
+logger.info(f"Perplexity API Key: {mask_key(PERPLEXITY_API_KEY)}")
+logger.info(f"OpenAI API Key: {mask_key(OPENAI_API_KEY)}")
 
 # Add better validation for API keys
-if not OPENAI_API_KEY or not PERPLEXITY_API_KEY:
+if not OPENAI_API_KEY and not PERPLEXITY_API_KEY:
     logger.error("Missing required API keys")
-    if not OPENAI_API_KEY:
-        logger.error("OPENAI_API_KEY is missing")
-    if not PERPLEXITY_API_KEY:
-        logger.error("PERPLEXITY_API_KEY is missing")
-    raise ValueError("Missing required API keys in key.env file")
+    raise ValueError("Missing required API keys. Set OPENAI_API_KEY or PERPLEXITY_API_KEY in src/puzzle_gen/key.env or the process environment.")
 
 try:
-    perplexity_client = OpenAI(api_key=PERPLEXITY_API_KEY, base_url="https://api.perplexity.ai")
-    openai_client = OpenAI(api_key=OPENAI_API_KEY, base_url="https://api.openai.com/v1")
+    perplexity_client = OpenAI(api_key=PERPLEXITY_API_KEY, base_url="https://api.perplexity.ai") if PERPLEXITY_API_KEY else None
+    openai_client = OpenAI(api_key=OPENAI_API_KEY, base_url="https://api.openai.com/v1") if OPENAI_API_KEY else None
+    generation_client = perplexity_client or openai_client
+    generation_model = PERPLEXITY_MODEL if perplexity_client else OPENAI_MODEL
+    logger.info(f"Using generation model: {generation_model}")
 except Exception as e:
     logger.error(f"Failed to initialize API clients: {str(e)}")
     raise
@@ -59,8 +64,8 @@ def get_candidate_words(theme: str = "", num_words: int = 100, words_to_avoid: L
         )
         
         try:
-            response = perplexity_client.chat.completions.create(
-                model="sonar-pro",
+            response = generation_client.chat.completions.create(
+                model=generation_model,
                 messages=[
                     {"role": "user", "content": prompt_text}
                 ],
@@ -112,8 +117,8 @@ def generate_hints(crossword: List[str], theme: str = "", tokens: int = 300) -> 
         )
 
         try:
-            response = perplexity_client.chat.completions.create(
-                model="sonar-pro",
+            response = generation_client.chat.completions.create(
+                model=generation_model,
                 messages=[{"role": "user", "content": prompt_text}],
                 max_tokens=tokens,
                 temperature=0.8,

@@ -1,15 +1,21 @@
 package com.example.crossword.dto;
 
 public class PuzzleRequest {
+    private static final int DEFAULT_MAX_WORDS = 100;
+    private static final int DEFAULT_MAX_ATTEMPTS = 15;
+    private static final int DEFAULT_THEME_WORDS = 3;
+    private static final int DEFAULT_WORD_TOKENS = 500;
+    private static final int DEFAULT_HINT_TOKENS = 300;
+
     private String theme;
     private String gridJson;
     private String cluesJson;
     private boolean regenerate;
-    private int maxWords;
-    private int maxAttempts;
-    private int themeWords;
-    private int wordTokens;
-    private int hintTokens;
+    private int maxWords = DEFAULT_MAX_WORDS;
+    private int maxAttempts = DEFAULT_MAX_ATTEMPTS;
+    private int themeWords = DEFAULT_THEME_WORDS;
+    private int wordTokens = DEFAULT_WORD_TOKENS;
+    private int hintTokens = DEFAULT_HINT_TOKENS;
 
     // Getters and setters
     public String getTheme() { return theme; }
