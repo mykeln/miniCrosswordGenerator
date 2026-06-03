@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 
+const backendUrl = process.env.CROSSWORD_BACKEND_URL ?? 'http://localhost:8080';
+
 // POST request to generate a puzzle
 export async function POST(request: Request) {
   try {
@@ -7,7 +9,7 @@ export async function POST(request: Request) {
     const body = await request.json();
 
     // Fetch the puzzle from the server
-    const response = await fetch('http://localhost:8080/api/puzzles/generate', {
+    const response = await fetch(`${backendUrl}/api/puzzles/generate`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

@@ -1,5 +1,7 @@
 package com.example.crossword.dto;
 
+import java.time.Instant;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -13,6 +15,9 @@ public class PuzzleResponse {
     private String schemaVersion = "mini-crossword.v1";
     private Long id;
     private String theme;
+    private LocalDate generatedFor;
+    private Instant createdAt;
+    private Instant updatedAt;
     private int size;
     private List<String> rows;
     private List<List<Cell>> grid;
@@ -26,6 +31,9 @@ public class PuzzleResponse {
         PuzzleResponse response = new PuzzleResponse();
         response.id = puzzle.getId();
         response.theme = puzzle.getTheme();
+        response.generatedFor = puzzle.getGeneratedFor();
+        response.createdAt = puzzle.getCreatedAt();
+        response.updatedAt = puzzle.getUpdatedAt();
         try {
             List<String> solution = mapper.readValue(puzzle.getSolutionJson(), new TypeReference<List<String>>() {});
             List<String> hints = mapper.readValue(puzzle.getHintsJson(), new TypeReference<List<String>>() {});
@@ -150,6 +158,30 @@ public class PuzzleResponse {
 
     public void setTheme(String theme) {
         this.theme = theme;
+    }
+
+    public LocalDate getGeneratedFor() {
+        return generatedFor;
+    }
+
+    public void setGeneratedFor(LocalDate generatedFor) {
+        this.generatedFor = generatedFor;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Instant createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public Instant getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(Instant updatedAt) {
+        this.updatedAt = updatedAt;
     }
 
     public int getSize() {

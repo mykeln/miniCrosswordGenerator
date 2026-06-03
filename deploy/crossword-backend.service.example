@@ -1,0 +1,14 @@
+[Unit]
+Description=Mini Crossword Generator backend
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/var/www/miniCrosswordGenerator
+Environment=CROSSWORD_DB_PATH=/var/lib/mini-crossword/crosswords.sqlite
+ExecStart=/var/www/miniCrosswordGenerator/mvnw spring-boot:run
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

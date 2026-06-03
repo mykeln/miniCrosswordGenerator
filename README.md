@@ -26,6 +26,12 @@ Requirements:
 
 Run the web application with `npm run dev` at root, and run the backend service with `./mvnw spring-boot:run`
 
+The backend stores generated puzzles in SQLite. By default it writes `./crosswords.sqlite`; override that with `CROSSWORD_DB_PATH`:
+
+```bash
+CROSSWORD_DB_PATH=/var/lib/crossword/crosswords.sqlite ./mvnw spring-boot:run
+```
+
 Configure LLM credentials in `src/puzzle_gen/key.env`:
 
 ```env
@@ -63,6 +69,44 @@ curl -X POST http://localhost:8080/api/puzzles/generate \
 ```
 
 Only `theme` is required. Generation settings default to the values shown above.
+
+For a daily cron workflow, call the idempotent daily endpoint. If a puzzle already exists for the date, the existing row is returned:
+
+```bash
+curl -X POST http://localhost:8080/api/puzzles/daily \
+  -H 'Content-Type: application/json' \
+  -d '{"theme": "today in history"}'
+```
+
+Optional daily fields:
+
+```json
+{
+  "generatedFor": "2026-06-03",
+  "force": false,
+  "theme": "today in history"
+}
+```
+
+Use `force: true` to regenerate and update that date's stored puzzle. A cron entry can call it once a day:
+
+```cron
+CRON_TZ=America/New_York
+0 0 * * * cd /var/www/miniCrosswordGenerator && CROSSWORD_BACKEND_URL=http://127.0.0.1:8091 bash scripts/generate-daily-crossword.sh
+```
+
+Example deployment files are in `deploy/`:
+
+- `crossword-backend.service.example` runs the Spring Boot API under systemd.
+- `crossword-daily.cron.example` calls the daily generation endpoint from cron.
+
+Query stored puzzles:
+
+```bash
+curl http://localhost:8080/api/puzzles/today
+curl 'http://localhost:8080/api/puzzles/by-date?date=2026-06-03'
+curl http://localhost:8080/api/puzzles/1
+```
 
 The response includes a stable structured payload under schema version `mini-crossword.v1`:
 

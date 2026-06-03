@@ -1,6 +1,7 @@
 from openai import OpenAI
 from typing import List
 import os
+import json
 from pathlib import Path
 from dotenv import load_dotenv
 import logging
@@ -110,10 +111,12 @@ def generate_hints(crossword: List[str], theme: str = "", tokens: int = 300) -> 
         logger.info(f"Words: {words}")
 
         prompt_text = (
-            f"Give me a clue for the following words in the style of the NYT mini crossword." +
-            (f" If the word can relate to '{theme}', make sure to include that in the clue." if theme else "") +
-            f"Return the clues' text with each hint on a new line." +
-            f"Words: {words}" 
+            "Write concise clues in the style of the NYT Mini Crossword for these 10 answers. "
+            "Return only a valid JSON array of exactly 10 strings, in the same order as the answers. "
+            "Do not include numbering, answer words, markdown, explanations, or introductory text. "
+            "Each string must be only the clue text. "
+            + (f"If an answer can relate to '{theme}', make that clue fit the theme. " if theme else "")
+            + f"Answers: {json.dumps(words)}"
         )
 
         try:
@@ -129,13 +132,21 @@ def generate_hints(crossword: List[str], theme: str = "", tokens: int = 300) -> 
             logger.error(f"API call failed: {str(e)}")
             raise
         
-        hints = response.choices[0].message.content
-        hints = hints.splitlines()
-        hints = [hint.strip() for hint in hints if hint.strip()]
-        hints = [hint[4:] if len(hint) > 4 and hint[:2].isdigit() and hint[2] == '.' and hint[3] == ' ' 
-                else hint[3:] if len(hint) > 3 and hint[0].isdigit() and hint[1] == '.' and hint[2] == ' ' 
+        hints_text = response.choices[0].message.content.strip()
+        try:
+            hints = json.loads(hints_text)
+        except json.JSONDecodeError:
+            hints = hints_text.splitlines()
+
+        hints = [hint.strip() for hint in hints if isinstance(hint, str) and hint.strip()]
+        hints = [hint[4:] if len(hint) > 4 and hint[:2].isdigit() and hint[2] == '.' and hint[3] == ' '
+                else hint[3:] if len(hint) > 3 and hint[0].isdigit() and hint[1] == '.' and hint[2] == ' '
                 else hint for hint in hints]
+        hints = [hint.split(":", 1)[1].strip() if ":" in hint and hint.split(":", 1)[0].strip().upper() in words else hint for hint in hints]
                 
+        if len(hints) != len(words):
+            raise ValueError(f"Expected {len(words)} hints, got {len(hints)}")
+
         if not hints:
             raise ValueError("No valid hints were generated")
             

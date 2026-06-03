@@ -18,11 +18,14 @@ public class PythonPuzzleClient {
     @Value("${app.python.script.path}")
     private String pythonScriptPath;
 
+    @Value("${app.python.command:python3}")
+    private String pythonCommand;
+
     public GeneratedPuzzleData requestPuzzle(String theme, boolean regenerate, int maxWords, int maxAttempts, int themeWords, int wordTokens, int hintTokens) {
         try {
             // python puzzle_generator.py <theme> <regenerate> <max_words> <max_attempts> <theme_words> <word_tokens> <hint_tokens>
             ProcessBuilder processBuilder = new ProcessBuilder(
-                "python", pythonScriptPath, theme, String.valueOf(regenerate), String.valueOf(maxWords), 
+                pythonCommand, pythonScriptPath, theme, String.valueOf(regenerate), String.valueOf(maxWords), 
                 String.valueOf(maxAttempts), String.valueOf(themeWords), String.valueOf(wordTokens), String.valueOf(hintTokens)
             );
             processBuilder.redirectErrorStream(true); // Merge stderr into stdout

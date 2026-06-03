@@ -1,0 +1,3 @@
+# Generate or return the existing daily puzzle at midnight Eastern time.
+CRON_TZ=America/New_York
+0 0 * * * cd /var/www/miniCrosswordGenerator && CROSSWORD_BACKEND_URL=http://127.0.0.1:8091 bash scripts/generate-daily-crossword.sh >> /var/log/mini-crossword-daily.log 2>&1
